@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử đơn hàng</title>
+    <style>
+ 
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background-color: #f5f5f7; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+        header { background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 10px 0; position: sticky; top: 0; z-index: 1000; }
+        nav { display: flex; justify-content: space-between; align-items: center; height: 44px; }
+        .nav-left, .nav-center ul { display: flex; align-items: center; list-style: none; padding: 0; margin: 0; }
+        .nav-left .reseller-logo { font-size: 10px; color: #666; border-left: 1px solid #ccc; padding-left: 10px; }
+        .nav-center ul li { margin: 0 15px; }
+        .nav-center ul li a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+        .nav-right { display: flex; align-items: center; }
+        .nav-right .icon { font-size: 18px; margin-left: 20px; cursor: pointer; }
+        .user-info-container { display: flex; align-items: center; gap: 15px; position: relative; margin-left: 10px;}
+        .user-display { display: flex; align-items: center; padding: 5px 12px; border-radius: 20px; background-color: #f0f0f0; font-size: 14px; color: #333; cursor: pointer; position: relative; }
+        .user-display:hover { background-color: #e0e0e0; }
+        .user-display span { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .login-link-btn { text-decoration: none; color: #d0021b; font-size: 14px; font-weight: 500; padding: 5px 10px; border: 1px solid #d0021b; border-radius: 4px; }
+        .user-dropdown { display: none; position: absolute; top: 100%; right: 0; width: 180px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px; }
+        .user-dropdown a { display: block; padding: 10px; text-decoration: none; color: #333; font-size: 14px; }
+        .user-dropdown a:hover { background-color: #f0f0f0; }
+
+
+        .history-page-content { max-width: 1000px; margin: 20px auto; padding: 20px 15px; }
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: 30px; color: #333; }
+        .order-card { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 25px; overflow: hidden; }
+        .order-card-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: #f9f9f9; border-bottom: 1px solid #eee; }
+        .order-card-header h2 { margin: 0; font-size: 18px; color: #333; }
+        .order-card-header p { margin: 0; font-size: 14px; color: #555; }
+        .status-badge { padding: 5px 12px; border-radius: 15px; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+        
+
+        .status-success { background-color: #e0f8e9; color: #28a745; }
+        .status-pending { background-color: #fff8e1; color: #f59e0b; }
+        .status-confirmed { background-color: #e6f7ff; color: #007bff; }
+        .status-delivering { background-color: #e6e6fa; color: #5a4fcf; }
+        .status-delivered { background-color: #e8f5e9; color: #388e3c; }
+        .status-cancelled { background-color: #fbebee; color: #d0021b; }
+        
+        .order-card-body { padding: 10px 20px; }
+        .order-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+        .order-item:last-child { border-bottom: none; }
+        .item-image { width: 70px; height: 70px; margin-right: 15px; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-details { flex-grow: 1; }
+        .item-details h3 { font-size: 16px; font-weight: 600; margin: 0 0 5px 0; }
+        .item-details p { font-size: 13px; color: #777; margin: 0; }
+        .item-price-qty { flex-shrink: 0; width: 130px; text-align: right; color: #555; font-size: 14px; }
+        .item-total { flex-shrink: 0; width: 120px; text-align: right; font-size: 16px; font-weight: 600; color: #333; }
+        .order-card-footer { padding: 15px 20px; background-color: #f9f9f9; border-top: 1px solid #eee; text-align: right; }
+        .order-card-footer p { margin: 0 0 10px 0; font-size: 14px; color: #333; text-align: left; }
+        .order-card-footer h3 { margin: 0; font-size: 20px; }
+        .total-amount { color: #d0021b; font-weight: 700; }
+    </style>
+</head>
+<body data-is-logged-in="{{ 'true' if user else 'false' }}">
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <span class="reseller-logo">Apple Premium<br>Reseller</span>
+                </div>
+                <div class="nav-center">
+                    <ul>
+                        <li><a href="/">Trang chủ</a></li>
+                        <li><a href="/compare">So Sánh</a></li>
+
+                        {% if user and user.user_role == 'admin' %}
+                        <li><a href="/dashboard">Admin</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="nav-right">
+                    <div class="user-info-container">
+                        <span class="icon">🔍</span> 
+                        {% if user %}
+                        <div class="user-display" id="user-menu-toggle">
+                            <span>{{ user.full_name }}</span> 
+                            <div class="user-dropdown" id="user-dropdown-menu">
+                                <a href="#">Tài khoản của tôi</a>
+                                <a href="/order-history">Lịch sử đơn hàng</a>
+                                <a href="/logout" style="color: #d0021b; font-weight: 600;">Đăng xuất</a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <a href="/login" class="login-link-btn">Đăng nhập</a>
+                        {% endif %}
+                        <a href="/cart" id="cart-icon-link">
+                            <span class="icon">🛒</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="history-page-content">
+        <div class="container">
+            <h1>Lịch sử đơn hàng</h1>
+
+            {% if not orders_list %}
+                <div class="order-card" style="padding: 30px; text-align: center; color: #777;">
+                    Bạn chưa có đơn hàng nào.
+                </div>
+            {% endif %}
+            
+            {% for order in orders_list %}
+            <div class="order-card">
+                
+                <div class="order-card-header">
+                    <div>
+                        <h2>Đơn hàng: #{{ order.id }}</h2>
+                        <p>Ngày đặt: {{ order.created_at.strftime('%H:%M - %d/%m/%Y') if order.created_at else 'N/A' }}</p>
+                    </div>
+                    
+                    <div style="text-align: right;">
+                        {% if order.status == 'success' %}
+                            <span class="status-badge status-success">Đã thanh toán</span>
+                        {% elif order.status == 'cod' %}
+                            <span class="status-badge status-pending">Ship COD</span>
+                        {% endif %}
+                        
+                        {% if order.fulfillment_status == 'pending' %}
+                            <span class="status-badge status-confirmed" style="margin-top: 5px;">Đang chuẩn bị</span>
+                        {% elif order.fulfillment_status == 'delivering' %}
+                            <span class="status-badge status-delivering" style="margin-top: 5px;">Đang giao</span>
+                        {% elif order.fulfillment_status == 'delivered' %}
+                            <span class="status-badge status-delivered" style="margin-top: 5px;">Đã giao</span>
+                        {% elif order.fulfillment_status == 'cancelled' %}
+                            <span class="status-badge status-cancelled" style="margin-top: 5px;">Đã hủy</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="order-card-body">
+                    {% if order.order_content %}
+                        {% for item in order.order_content %}
+                        <div class="order-item">
+                            <div class="item-image">
+                                <img src="{{ item.main_image_url or 'https://via.placeholder.com/80?text=IMG' }}" alt="{{ item.base_name }}">
+                            </div>
+                            <div class="item-details">
+                                <h3>{{ item.base_name }} {{ item.storage }}</h3>
+                                <p>Màu: {{ item.color }}</p>
+                            </div>
+                            <div class="item-price-qty">
+                                <p>{{ "{:,.0f}₫".format(item.price | float) }}</p>
+                                <p>Số lượng: x{{ item.quantity }}</p>
+                            </div>
+                            <div class="item-total">
+                                <strong>{{ "{:,.0f}₫".format(item.item_total | float) }}</strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="text-align: center; color: #999; padding: 10px;">Không có chi tiết sản phẩm cho đơn hàng này.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="order-card-footer">
+                    <p><strong>Địa chỉ giao hàng:</strong> {{ order.shipping_address or 'N/A' }}</p>
+                    <h3>Tổng cộng: <span class="total-amount">{{ "{:,.0f}₫".format(order.amount | float) }}</span></h3>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- LOGIC DROPDOWN MENU ---
+            const userToggle = document.getElementById('user-menu-toggle');
+            const userMenu = document.getElementById('user-dropdown-menu');
+            
+            if (userToggle && userMenu) {
+                userToggle.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
+                });
+                document.body.addEventListener('click', () => {
+                    if (userMenu.style.display === 'block') { userMenu.style.display = 'none'; }
+                });
+            }
+
+            // --- LOGIC BẢO VỆ ICON GIỎ HÀNG (NẾU CẦN) ---
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            const cartIconLink = document.getElementById('cart-icon-link');
+
+            if (cartIconLink && !isLoggedIn) {
+                cartIconLink.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    alert('Vui lòng đăng nhập để xem giỏ hàng!');
+                    window.location.href = '/login';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

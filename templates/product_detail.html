@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết: {{ product.base_name }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background-color: #f5f5f7; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+        header { background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 10px 0; position: sticky; top: 0; z-index: 1000; }
+        nav { display: flex; justify-content: space-between; align-items: center; height: 44px; }
+        .nav-left, .nav-center ul { display: flex; align-items: center; list-style: none; padding: 0; margin: 0; }
+        .nav-left .reseller-logo { font-size: 10px; color: #666; border-left: 1px solid #ccc; padding-left: 10px; }
+        .nav-center ul li { margin: 0 15px; }
+        .nav-center ul li a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+        .nav-right { display: flex; align-items: center; }
+        .nav-right .icon { font-size: 18px; margin-left: 20px; cursor: pointer; }
+        .user-info-container { display: flex; align-items: center; gap: 15px; position: relative; margin-left: 10px;}
+        .user-display { display: flex; align-items: center; padding: 5px 12px; border-radius: 20px; background-color: #f0f0f0; font-size: 14px; color: #333; cursor: pointer; position: relative; }
+        .user-display:hover { background-color: #e0e0e0; }
+        .user-display span { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .login-link-btn { text-decoration: none; color: #d0021b; font-size: 14px; font-weight: 500; padding: 5px 10px; border: 1px solid #d0021b; border-radius: 4px; }
+        .login-link-btn:hover { background-color: #f9eaea; }
+        .user-dropdown { display: none; position: absolute; top: 100%; right: 0; width: 180px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px; }
+        .user-dropdown a { display: block; padding: 10px; text-decoration: none; color: #333; font-size: 14px; }
+        .user-dropdown a:hover { background-color: #f0f0f0; }
+        
+        .detail-section { padding: 40px 0; background-color: white; min-height: 80vh; }
+        .detail-content { display: flex; gap: 40px; background-color: #fcfcfc; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        .product-gallery { flex-basis: 40%; text-align: center; }
+        .product-gallery img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .product-info { flex-basis: 60%; }
+        .product-info h1 { font-size: 32px; margin-top: 0; margin-bottom: 10px; }
+        .product-price { font-size: 36px; color: #ff3b30; font-weight: bold; margin-bottom: 20px; }
+        .buy-actions { display: flex; gap: 15px; margin-bottom: 30px; }
+        .btn { padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
+        .btn-buy { background-color: #ff3b30; color: white; }
+        .btn-buy:hover { background-color: #cc0000; }
+        .btn-cart { background-color: #f0f0f0; color: #333; border: 1px solid #ccc; }
+        .btn-cart:hover { background-color: #e0e0e0; }
+        .specs-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .specs-table th, .specs-table td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        .specs-table th { background-color: #f7f7f7; width: 30%; font-weight: 500; }
+        
+        .modal-overlay {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.2s;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 500px;
+            max-width: 90%;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center; 
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            color: #aaa;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-close-btn:hover { color: #333; }
+        
+        .modal-form-group { margin-bottom: 15px; text-align: left; }
+        .modal-form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+        .modal-form-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; 
+        }
+        
+        .payment-options { margin-top: 20px; text-align: left; }
+        .radio-group { display: block; border: 1px solid #ccc; border-radius: 4px; padding: 12px; margin-bottom: 10px; cursor: pointer; }
+        .radio-group input { margin-right: 10px; }
+        .btn-complete-order, .btn-primary {
+            width: 100%; padding: 15px; background-color: #d0021b; color: white; border: none; border-radius: 6px;
+            font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; text-decoration: none; 
+            display: block;
+            box-sizing: border-box; 
+        }
+        
+        #qr-code-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            min-height: 256px; 
+        }
+        #qr-code-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        #qr-memo-text { font-weight: bold; font-size: 18px; color: #d0021b; }
+        
+        .success-icon {
+            font-size: 50px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        
+        #custom-alert-modal .modal-content { width: 350px; }
+        .btn-modal { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        .btn-modal-confirm { background-color: #d0021b; color: white; }
+        
+        .review-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        .review-list {
+            margin-top: 20px;
+        }
+        .review-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 15px 0;
+        }
+        .review-item p { margin: 5px 0; }
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .review-author { font-weight: 600; }
+        .review-date { font-size: 13px; color: #888; }
+        .stars { color: #f59e0b; }
+        #review-form {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        #review-form select,
+        #review-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #review-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #review-form button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body data-is-logged-in="{{ 'true' if user else 'false' }}">
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <span class="reseller-logo">Apple Premium<br>Reseller</span>
+                </div>
+                <div class="nav-center">
+                    <ul>
+                        <li><a href="/">Trang chủ</a></li>
+                        <li><a href="/compare">So Sánh</a></li>
+                        
+                        {% if user and user.user_role == 'admin' %}
+                        <li><a href="/dashboard">Admin</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="nav-right">
+                    <div class="user-info-container">
+                        <span class="icon">🔍</span> 
+                        {% if user %}
+                        <div class="user-display" id="user-menu-toggle">
+                            <span>{{ user.full_name }}</span> 
+                            <div class="user-dropdown" id="user-dropdown-menu">
+                                <a href="/order-history">Lịch sử đơn hàng</a>
+                                <a href="/logout" style="color: #d0021b; font-weight: 600;">Đăng xuất</a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <a href="/login" class="login-link-btn">Đăng nhập</a>
+                        {% endif %}
+                        <a href="/cart" id="cart-icon-link">
+                            <span class="icon">🛒</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="detail-section">
+        <div class="container">
+            <div class="detail-content">
+                
+                <div class="product-gallery">
+                    <img src="{{ product.main_image_url }}" alt="{{ product.base_name }}">
+                </div>
+
+                <div class="product-info">
+                    <h1>{{ product.base_name }} {{ product.storage }}</h1>
+                    <div class="product-price">
+                        {{ "{:,.0f}₫".format(product.price | float) }}
+                    </div>
+
+                    <div class="buy-actions">
+                        <button class="btn btn-buy" 
+                                id="buy-now-btn"
+                                data-price="{{ product.price }}"
+                                data-product-id="{{ product.id }}">
+                            Mua ngay
+                        </button>
+                        
+                        <button class="btn btn-cart" 
+                                id="add-to-cart-btn" 
+                                data-product-id="{{ product.id }}">
+                            Thêm giỏ hàng
+                        </button>
+                    </div>
+                    
+                    <h3>Mô tả ngắn</h3>
+                    <p>{{ product.description or 'Sản phẩm đang được bán chính hãng.' }}</p>
+                    {% if product.specs %}
+                    <h3>Cấu hình chi tiết</h3>
+                    <table class="specs-table">
+                        <tbody>
+                            {% for key, value in product.specs.items() %}
+                            <tr>
+                                <th>{{ key | upper }}</th>
+                                <td>{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr> <th>DUNG LƯỢNG</th> <td>{{ product.storage or 'N/A' }}</td> </tr>
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="review-section">
+                <h2>Đánh giá sản phẩm</h2>
+
+                {% if user %}
+                <form id="review-form">
+                    <h3>Viết đánh giá của bạn</h3>
+                    <div class="form-group">
+                        <label for="rating-select">Xếp hạng (sao):</label>
+                        <select id="rating-select" required>
+                            <option value="">-- Chọn số sao --</option>
+                            <option value="5">⭐⭐⭐⭐⭐ (Tuyệt vời)</option>
+                            <option value="4">⭐⭐⭐⭐ (Tốt)</option>
+                            <option value="3">⭐⭐⭐ (Bình thường)</option>
+                            <option value="2">⭐⭐ (Tệ)</option>
+                            <option value="1">⭐ (Rất tệ)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment-text">Bình luận của bạn:</label>
+                        <textarea id="comment-text" rows="4" placeholder="Sản phẩm này rất..."></textarea>
+                    </div>
+                    <input type="hidden" id="product-id-hidden" value="{{ product.id }}">
+                    <button type="submit" id="submit-review-btn">Gửi đánh giá</button>
+                </form>
+                {% else %}
+                <p><a href="/login">Đăng nhập</a> để để lại đánh giá của bạn.</p>
+                {% endif %}
+
+
+                <div class="review-list">
+                    <h3>Đánh giá của khách hàng ({{ reviews|length }})</h3>
+                    
+                    {% if not reviews %}
+                        <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+                    {% endif %}
+
+                    {% for review in reviews %}
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="review-author">{{ review.full_name }}</span>
+                            <span class="review-date">{{ review.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <div class="stars">
+                            {% for i in range(review.rating) %}⭐{% endfor %}
+                        </div>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div> 
+        </div>
+    </section>
+    
+    <div id="checkout-modal" class="modal-overlay">
+        <div class="modal-content" style="text-align: left;">
+            <span class="modal-close-btn" id="checkout-modal-close-btn">&times;</span>
+            <h2 style="margin-top: 0; text-align: center;">Xác nhận Đơn hàng</h2>
+            
+            <form id="checkout-form">
+                <div class="modal-form-group">
+                    <label for="checkout-name">Họ và tên</label>
+                    <input type="text" id="checkout-name" value="{{ user.full_name if user else '' }}" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="checkout-phone">Số điện thoại</label>
+                    <input type="text" id="checkout-phone" value="{{ user.phone_number if user else '' }}" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="checkout-address">Địa chỉ nhận hàng</label>
+                    <input type="text" id="checkout-address" placeholder="Nhập số nhà, tên đường, phường/xã..." required>
+                </div>
+                
+                <div class="payment-options">
+                    <label class="radio-group">
+                        <input type="radio" name="payment_method" value="cod" checked>
+                        Thanh toán khi nhận hàng (COD)
+                    </label>
+                    <label class="radio-group">
+                        <input type="radio" name="payment_method" value="bank_transfer">
+                        Chuyển khoản ngân hàng (QR)
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-complete-order">Hoàn tất đơn hàng</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="qr-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close-btn" id="qr-modal-close-btn">&times;</span>
+            <h2>Quét mã QR để thanh toán</h2>
+            <p>Ngân hàng: MB Bank | SĐT: 0964310061</p>
+            <p>Chủ tài khoản: PHAM LE GIA BAO</p>
+            
+            <div id="qr-code-container">
+            </div>
+            
+            <h3 id="qr-amount-text"></h3>
+            <p id="qr-memo-text"></p>
+            <p style="font-style: italic; color: #555; margin-top: 15px;">(Đang chờ xác nhận thanh toán...)</p>
+        </div>
+    </div>
+
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="success-icon">✔️</div>
+            <h2 style="color: #28a745;">Thanh toán thành công!</h2>
+            <p>Đơn hàng của bạn đã được xác nhận.</p>
+            <a href="/order-history" class="btn-primary" style="background-color: #28a745;">Xem lịch sử đơn hàng</a>
+        </div>
+    </div>
+    
+    <div id="custom-alert-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close-btn" id="custom-alert-close-btn">&times;</span>
+            <h3 style="margin-top: 0;">Thông báo</h3>
+            <p id="custom-alert-message"></p>
+            <button class="btn-modal btn-modal-confirm" id="custom-alert-ok-btn">OK</button>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+        const userToggle = document.getElementById('user-menu-toggle');
+        const userMenu = document.getElementById('user-dropdown-menu');
+        const cartIconLink = document.getElementById('cart-icon-link');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        
+        const buyNowBtn = document.getElementById('buy-now-btn');
+        
+        const checkoutModal = document.getElementById('checkout-modal');
+        const checkoutCloseBtn = document.getElementById('checkout-modal-close-btn');
+        const checkoutForm = document.getElementById('checkout-form');
+
+        const qrModal = document.getElementById('qr-modal');
+        const qrCloseBtn = document.getElementById('qr-modal-close-btn');
+        const qrCodeContainer = document.getElementById('qr-code-container'); 
+        
+        const successModal = document.getElementById('success-modal');
+
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertCloseBtn = document.getElementById('custom-alert-close-btn');
+        const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
+
+        let pollingInterval = null;
+
+        function showCustomAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlertModal.style.display = 'flex';
+        }
+        customAlertOkBtn.addEventListener('click', () => customAlertModal.style.display = 'none');
+        customAlertCloseBtn.addEventListener('click', () => customAlertModal.style.display = 'none');
+
+        function requireLogin(event) {
+            event.preventDefault(); 
+            showCustomAlert('Vui lòng đăng nhập để sử dụng chức năng này!');
+            customAlertOkBtn.onclick = () => {
+                customAlertModal.style.display = 'none';
+                window.location.href = '/login';
+            };
+        }
+
+        if (userToggle && userMenu) {
+            userToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.body.addEventListener('click', () => {
+                if (userMenu.style.display === 'block') { userMenu.style.display = 'none'; }
+            });
+        }
+
+        if (cartIconLink && !isLoggedIn) {
+            cartIconLink.addEventListener('click', requireLogin);
+        }
+
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', async (event) => {
+                if (!isLoggedIn) { requireLogin(event); return; }
+                
+                const productId = event.target.dataset.productId;
+                event.target.disabled = true;
+                event.target.textContent = 'Đang thêm...';
+                
+                try {
+                    const response = await fetch('/add-to-cart', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_id: productId, quantity: 1 })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showCustomAlert('Đã thêm sản phẩm vào giỏ hàng!');
+                        event.target.textContent = 'Đã thêm ✔️';
+                    } else {
+                        showCustomAlert('Lỗi: ' + data.message);
+                        event.target.textContent = 'Thêm giỏ hàng';
+                        event.target.disabled = false;
+                    }
+                } catch (err) {
+                    showCustomAlert('Lỗi kết nối server.');
+                    event.target.textContent = 'Thêm giỏ hàng';
+                    event.target.disabled = false;
+                }
+            });
+        }
+
+        if (buyNowBtn) {
+            buyNowBtn.addEventListener('click', (event) => {
+                if (!isLoggedIn) { requireLogin(event); return; }
+                checkoutModal.style.display = 'flex';
+            });
+        }
+        
+        if (checkoutForm) {
+            checkoutForm.addEventListener('submit', async (event) => {
+                event.preventDefault(); 
+                
+                const paymentMethod = checkoutForm.querySelector('input[name="payment_method"]:checked').value;
+                const address = document.getElementById('checkout-address').value;
+
+                if (!address.trim()) {
+                    showCustomAlert('Vui lòng nhập địa chỉ nhận hàng.');
+                    return;
+                }
+                
+                if (paymentMethod === 'cod') {
+                    const price = buyNowBtn.dataset.price;
+                    const productId = buyNowBtn.dataset.productId;
+                    
+                    try {
+                        const response = await fetch('/create-cod-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                price: price, 
+                                product_id: productId,
+                                shipping_address: address,
+                                payment_type: 'cod_buy_now' 
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showCustomAlert('Đặt hàng (COD) thành công! Đơn hàng của bạn đang chờ xử lý.');
+                            checkoutModal.style.display = 'none';
+                            window.location.href = '/order-history'; 
+                        } else {
+                            showCustomAlert('Lỗi: ' + data.message);
+                        }
+                    } catch (err) {
+                        showCustomAlert('Lỗi kết nối khi tạo đơn COD.');
+                    }
+                }
+                else if (paymentMethod === 'bank_transfer') {
+                    const price = buyNowBtn.dataset.price;
+                    const productId = buyNowBtn.dataset.productId;
+
+                    try {
+                        const response = await fetch('/create-payment-qr', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                price: price, 
+                                product_id: productId,
+                                shipping_address: address,
+                                payment_type: 'buy_now' 
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            qrCodeContainer.innerHTML = ''; 
+                            
+                            new QRCode(qrCodeContainer, {
+                                text: data.qr_link, 
+                                width: 256,
+                                height: 256,
+                                correctLevel : QRCode.CorrectLevel.H
+                            });
+                            
+                            document.getElementById('qr-amount-text').textContent = `Số tiền: ${parseFloat(data.amount).toLocaleString('vi-VN')}₫`;
+                            document.getElementById('qr-memo-text').textContent = `Nội dung: ${data.memo}`;
+                            
+                            checkoutModal.style.display = 'none';
+                            qrModal.style.display = 'flex';
+
+                            startPolling(data.order_id);
+
+                        } else {
+                            showCustomAlert('Lỗi tạo QR: ' + data.message);
+                        }
+                    } catch (err) {
+                        console.error('Lỗi fetch /create-payment-qr:', err);
+                        showCustomAlert('Lỗi kết nối server khi tạo QR.');
+                    }
+                }
+            });
+        }
+
+        function startPolling(orderId) {
+            stopPolling(); 
+            console.log("Bắt đầu Polling cho đơn hàng:", orderId);
+            
+            pollingInterval = setInterval(async () => {
+                await checkOrderStatus(orderId);
+            }, 3000); 
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                console.log("Dừng Polling.");
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        async function checkOrderStatus(orderId) {
+            try {
+                const response = await fetch(`/check-order-status/${orderId}`);
+                if (!response.ok) return; 
+                
+                const data = await response.json();
+                
+                if (data.success && data.status === 'success') {
+                    console.log("Phát hiện thanh toán thành công!");
+                    stopPolling();
+                    
+                    qrModal.style.display = 'none';
+                    successModal.style.display = 'flex';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/order-history';
+                    }, 3000);
+                }
+                
+            } catch (err) {
+                console.error("Lỗi Polling:", err);
+                stopPolling(); 
+            }
+        }
+        
+        if (checkoutCloseBtn) {
+            checkoutCloseBtn.addEventListener('click', () => {
+                checkoutModal.style.display = 'none';
+            });
+        }
+        if (qrCloseBtn) {
+            qrCloseBtn.addEventListener('click', () => {
+                qrModal.style.display = 'none';
+                stopPolling(); 
+            });
+        }
+        
+        const reviewForm = document.getElementById('review-form');
+
+        if (reviewForm) {
+            reviewForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const productId = document.getElementById('product-id-hidden').value;
+                const rating = document.getElementById('rating-select').value;
+                const comment = document.getElementById('comment-text').value;
+                const submitBtn = document.getElementById('submit-review-btn');
+
+                if (!rating) {
+                    showCustomAlert('Vui lòng chọn số sao đánh giá.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Đang gửi...';
+
+                try {
+                    const response = await fetch('/submit-review', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            product_id: productId,
+                            rating: parseInt(rating),
+                            comment: comment
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showCustomAlert(data.message);
+                        window.location.reload();
+                    } else {
+                        showCustomAlert('Lỗi: ' + data.message);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Gửi đánh giá';
+                    }
+
+                } catch (err) {
+                    console.error('Lỗi fetch /submit-review:', err);
+                    showCustomAlert('Lỗi kết nối server.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Gửi đánh giá';
+                }
+            });
+        }
+
+    }); 
+</script>
+</body>
+</html>

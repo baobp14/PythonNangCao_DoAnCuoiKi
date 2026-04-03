@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập / Đăng ký</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background-color: #fcfcfc; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .login-container { width: 960px; min-height: 600px; display: flex; background-color: white; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-radius: 4px; overflow: hidden; position: relative; }
+
+        .login-left { flex: 1; padding: 40px 0; border-right: 1px solid #f0f0f0; display: flex; flex-direction: column; align-items: center; position: relative; background-color: #fff; }
+        .logo-group { display: flex; gap: 5px; margin-bottom: 20px; }
+        .logo-group span { font-weight: 700; font-size: 15px; padding: 3px 6px; line-height: 1.2; border-radius: 2px; }
+        .main-brand-logo { color: #d0021b; border: 1px solid #d0021b; }
+        .sub-brand-logo { color: white; background-color: #d0021b; }
+        .left-content-text { text-align: center; margin-bottom: 25px; }
+        .left-content-text h2 { font-size: 17px; margin-bottom: 8px; font-weight: 600; color: #333; line-height: 1.4; }
+        .left-content-text p { font-size: 14px; color: #555; line-height: 1.5; max-width: 380px; }
+        .benefit-box { border: 1px solid #d0021b; padding: 20px 25px; width: 380px; text-align: left; border-radius: 4px; margin-bottom: 10px; }
+        .benefit-list { list-style: none; padding: 0; margin: 0; }
+        .benefit-list li { font-size: 13.5px; margin-bottom: 10px; display: flex; align-items: flex-start; color: #333; line-height: 1.4; }
+        .benefit-list li:last-child { margin-bottom: 0; }
+        .benefit-list li::before { content: '♦'; color: #d0021b; margin-top: 2px; margin-right: 8px; flex-shrink: 0; font-size: 14px; }
+        .benefit-link { display: block; margin-top: 20px; font-size: 13px; color: #d0021b; text-decoration: none; font-weight: 500; text-align: center; }
+        .illustration-image { position: relative; width: 300px; height: 150px; margin-top: 20px; margin-left: 20px; overflow: hidden; }
+        .illustration-image img { max-width: 100%; height: auto; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); }
+
+        .login-right { flex: 1; padding: 50px 50px 50px 60px; position: relative; }
+        .form-title { font-size: 20px; font-weight: 600; margin-bottom: 30px; text-align: left; }
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 14px; color: #555; margin-bottom: 5px; }
+        .form-control { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .input-with-icon { position: relative; width: 100%; }
+        .input-with-icon .form-control { padding-right: 40px; }
+        .input-with-icon .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; font-size: 18px; user-select: none; }
+        .btn-main { width: 100%; padding: 14px; background-color: #d0021b; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: background-color 0.2s; }
+        .btn-main:hover { background-color: #b00115; }
+        .btn-main:disabled { background-color: #ccc; } /* (MỚI) Thêm cho Firebase */
+        .btn-secondary { background-color: #6c757d; margin-top: 10px; } /* (MỚI) Thêm cho Firebase */
+        .forgot-password { display: block; text-align: right; margin-top: 10px; font-size: 13px; color: #007bff; text-decoration: none; }
+        .divider { text-align: center; margin: 30px 0; font-size: 14px; color: #aaa; position: relative; }
+        .divider span { background: white; padding: 0 10px; z-index: 1; position: relative; }
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background-color: #eee; z-index: 0; }
+        .social-login { display: flex; gap: 15px; justify-content: space-between; }
+        .btn-social { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: white; font-size: 14px; font-weight: 500; color: #333; }
+        .btn-social .icon-placeholder { width: 20px; height: 20px; border-radius: 4px; background-color: #ddd; }
+        .login-footer { text-align: center; margin-top: 40px; font-size: 14px; }
+        .login-footer a { color: #d0021b; text-decoration: none; font-weight: 600; }
+        .login-footer p { color: #999; margin: 5px 0; font-size: 13px; }
+        
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 30px;
+        }
+        .tab-button {
+            flex: 1;
+            padding-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            color: #888;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            color: #d0021b;
+            border-bottom: 3px solid #d0021b;
+        }
+        .form-wrapper {
+            display: none; /* Ẩn cả 2 form */
+        }
+        .form-wrapper.active {
+            display: block; /* Hiện form active */
+        }
+        .error-message { 
+            background-color: #ffeaea; color: #d0021b; padding: 10px; 
+            border-radius: 4px; margin-bottom: 20px; border: 1px solid #d0021b; 
+            font-size: 14px; font-weight: 500;
+        }
+        #otp-section { display: none; } /* Ẩn mục OTP */
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        
+        <div class="login-left">
+            <div class="logo-group">
+                <span class="main-brand-logo">Cửa hàng điện thoại</span>
+            </div>
+            <div class="left-content-text">
+                <h2>
+                    Nhập hội khách hàng thành viên VIP <br>
+                    để không bỏ lỡ các ưu đãi hấp dẫn từ Hệ thống.
+                </h2>
+            </div>
+            <div class="benefit-box">
+                <ul class="benefit-list">
+                    <li>Chiết khấu đến 5% khi mua các sản phẩm tại cửa hàng a</li>
+                    <li>Miễn phí giao hàng cho thành viên VIP, SVIP và cho đơn hàng từ 300.000₫</li>
+                    <li>Tặng voucher sinh nhật đến 500.000₫ cho khách hàng thành viên</li>
+                    <li>Thăng hạng nhận voucher đến 300.000₫</li>
+                    <li>Đặc quyền ưu đãi đặc biệt dành riêng cho bạn</li>
+                </ul>
+            </div>
+            <div class="illustration-image">
+                 </div>
+        </div>
+
+        <div class="login-right">
+            
+            <div class="auth-tabs">
+                <button class="tab-button {% if active_tab == 'login' %}active{% endif %}" data-form="login-form-wrapper">Đăng nhập</button>
+                <button class="tab-button {% if active_tab == 'register' %}active{% endif %}" data-form="register-form-wrapper">Đăng ký</button>
+            </div>
+
+            <div id="login-form-wrapper" class="form-wrapper {% if active_tab == 'login' %}active{% endif %}">
+                <h2 class="form-title">Đăng nhập Tài khoản Khách hàng</h2> 
+                
+                {% if error and active_tab == 'login' %}
+                <div class="error-message">
+                    {{ error }}
+                </div>
+                {% endif %}
+                
+                <form action="/login" method="POST">
+                    <div class="form-group">
+                        <label for="login-phone" class="form-label">Số điện thoại</label>
+                        <input type="tel" id="login-phone" name="phone" class="form-control" placeholder="0xxxxxxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Mật khẩu</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="login-password" name="password" class="form-control" placeholder="Nhập mật khẩu của bạn" required>
+                            <span class="toggle-password">👁️</span> 
+                        </div>
+                    </div>
+                    <a href="/forgot-password" class="forgot-password">Quên mật khẩu?</a>
+                    <button type="submit" class="btn-main">Đăng nhập</button>
+                </form>
+                
+
+            </div>
+
+            <div id="register-form-wrapper" class="form-wrapper {% if active_tab == 'register' %}active{% endif %}">
+                <h2 class="form-title">Đăng ký Tài khoản Mới</h2> 
+                
+                <form id="firebase-register-form">
+                    <p class="error-message" id="error-text-register" style="display: none;"></p>
+                    
+                    <div class="form-group">
+                        <label for="name" class="form-label">Họ và tên</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Số điện thoại</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" placeholder="0xxxxxxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Mật khẩu</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    
+                    <div id="recaptcha-container" style="margin-bottom: 15px;"></div>
+                    <button type="button" class="btn-main" id="send-otp-btn">Gửi Mã OTP</button>
+
+                    <div id="otp-section" class="form-group">
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                        <label for="otp-code">Nhập mã OTP (6 số)</label>
+                        <input type="text" id="otp-code" class="form-control" maxlength="6">
+                        <button type="button" class="btn-main btn-secondary" id="verify-btn">Xác thực & Đăng ký</button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script type="module">
+   
+        const firebaseConfig = {
+            apiKey: "AIzaSyCD55ycF8evpiP15OVZgzNQzvyrHlKJW-A", 
+            authDomain: "dack-59356.firebaseapp.com",
+            projectId: "dack-59356", 
+            storageBucket: "dack-59356.firebasestorage.app", 
+            messagingSenderId: "1009814394485", 
+            appId: "1:1009814394485:web:42c041d44cd30d150c4a3c" 
+        };
+
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+
+        const tabs = document.querySelectorAll('.tab-button');
+        const forms = document.querySelectorAll('.form-wrapper');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                forms.forEach(f => f.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.form).classList.add('active');
+
+                if (tab.dataset.form === 'register-form-wrapper') {
+                    renderRecaptcha();
+                }
+            });
+        });
+
+        document.querySelectorAll('.toggle-password').forEach(icon => {
+            icon.addEventListener('click', () => {
+                const input = icon.previousElementSibling;
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                icon.textContent = (type === 'password' ? '👁️' : '🔒');
+            });
+        });
+
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const verifyBtn = document.getElementById('verify-btn');
+        const otpSection = document.getElementById('otp-section');
+        const errorText = document.getElementById('error-text-register');
+
+        let confirmationResult = null;
+        let recaptchaRendered = false; 
+
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            'size': 'normal', 
+            'callback': (response) => { console.log("reCAPTCHA OK"); }
+        });
+        
+        function renderRecaptcha() {
+            if (!recaptchaRendered) {
+                try {
+                    window.recaptchaVerifier.render();
+                    recaptchaRendered = true;
+                } catch (e) {
+                    console.error("Lỗi render reCAPTCHA:", e);
+                }
+            }
+        }
+        
+        if (document.getElementById('register-form-wrapper').classList.contains('active')) {
+             renderRecaptcha();
+        }
+
+        sendOtpBtn.addEventListener('click', async () => {
+            const phoneInput = document.getElementById('phone');
+            const passwordInput = document.getElementById('password');
+            let phoneNumber = phoneInput.value.trim();
+
+            if (!phoneNumber || !passwordInput.value) {
+                errorText.textContent = "Vui lòng nhập SĐT và Mật khẩu.";
+                errorText.style.display = 'block';
+                return;
+            }
+
+            if (phoneNumber.startsWith('0')) {
+                phoneNumber = '+84' + phoneNumber.substring(1);
+            }
+
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.textContent = 'Đang gửi...';
+            errorText.style.display = 'none';
+
+            try {
+                confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
+                console.log("OTP đã gửi, chờ xác thực.");
+                otpSection.style.display = 'block'; 
+                sendOtpBtn.textContent = 'Đã gửi mã!';
+                
+            } catch (error) {
+                console.error("Lỗi gửi OTP:", error);
+                errorText.textContent = `Lỗi: ${error.message}`;
+                errorText.style.display = 'block';
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.textContent = 'Gửi Mã OTP';
+                window.recaptchaVerifier.render().then(function(widgetId) {
+                    grecaptcha.reset(widgetId);
+                });
+            }
+        });
+
+        verifyBtn.addEventListener('click', async () => {
+            const otpCode = document.getElementById('otp-code').value.trim();
+            
+            if (!otpCode || otpCode.length !== 6) {
+                errorText.textContent = "Vui lòng nhập mã OTP 6 số.";
+                errorText.style.display = 'block';
+                return;
+            }
+            if (!confirmationResult) {
+                errorText.textContent = "Lỗi. Vui lòng thử lại từ đầu.";
+                errorText.style.display = 'block';
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Đang xác thực...';
+
+            try {
+                await confirmationResult.confirm(otpCode);
+                console.log("Xác thực OTP thành công!");
+                
+                const name = document.getElementById('name').value;
+                const phone = document.getElementById('phone').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        phone: phone,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
+                    window.location.reload(); 
+                } else {
+                    errorText.textContent = data.message;
+                    errorText.style.display = 'block';
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Xác thực & Đăng ký';
+                }
+
+            } catch (error) {
+                console.error("Lỗi xác thực mã:", error);
+                errorText.textContent = "Mã OTP không đúng hoặc đã hết hạn.";
+                errorText.style.display = 'block';
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Xác thực & Đăng ký';
+            }
+        });
+    </script>
+
+</body>
+</html>

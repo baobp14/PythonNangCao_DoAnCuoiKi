@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; }
+        .sidebar { width: 240px; background-color: #2c3e50; color: #ecf0f1; height: 100vh; position: fixed; top: 0; left: 0; padding: 20px; }
+        .sidebar-header { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 30px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav li { margin-bottom: 10px; }
+        .sidebar-nav a { text-decoration: none; color: #ecf0f1; display: block; padding: 12px 15px; border-radius: 6px; cursor: pointer; }
+        .sidebar-nav a.active { background-color: #007bff; font-weight: 500; }
+        .main-content { margin-left: 240px; padding: 30px; width: calc(100% - 240px); }
+        h1, h2 { font-size: 28px; margin-bottom: 20px; }
+        .form-container, .user-management-container { background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 30px; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px 15px; font-size: 16px; border: 1px solid #dfe7ec; border-radius: 6px; box-sizing: border-box; }
+        textarea.form-control { min-height: 120px; resize: vertical; }
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .specs-fieldset { border: 1px solid #dfe7ec; border-radius: 6px; padding: 20px 20px 10px 20px; margin-bottom: 20px; }
+        .specs-fieldset legend { font-weight: 600; font-size: 18px; padding: 0 10px; margin-left: 10px; color: #007bff; }
+        input[type="file"] { display: none; }
+        .file-upload-btn { background-color: #34495e; color: #ffffff; padding: 12px 20px; border-radius: 6px; cursor: pointer; display: inline-block; font-weight: 500; }
+        #file-name { margin-left: 15px; font-style: italic; color: #555; }
+        .btn-submit { background-color: #007bff; color: white; padding: 14px 25px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        
+        .user-table { width: 100%; border-collapse: collapse; }
+        .user-table th, .user-table td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; }
+        .user-table th { background-color: #f7f7f7; font-weight: 600; }
+        .role-selector { padding: 5px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 30px;
+            background-color: #ffffff; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+            padding: 30px; 
+            margin-bottom: 30px;
+        }
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .order-table th, .order-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .order-table th {
+            background-color: #f4f4f4;
+        }
+        .order-table select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .status-pending { background-color: #fff8e1; color: #f59e0b; }
+        .status-success { background-color: #e0f8e9; color: #28a745; }
+        .status-confirmed { background-color: #e6f7ff; color: #007bff; }
+        .status-delivering { background-color: #e6e6fa; color: #5a4fcf; }
+        .status-delivered { background-color: #e8f5e9; color: #388e3c; }
+        .status-cancelled { background-color: #fbebee; color: #d0021b; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">Admin Panel</div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="/">Trang chủ</a></li>
+                <li><a class="sidebar-link active" data-tab="add-product-content">Thêm Sản phẩm</a></li>
+                <li><a class="sidebar-link" data-tab="manage-users-content">Quản lý Người dùng</a></li>
+                <li><a class="sidebar-link" data-tab="manage-orders-content">Quản lý Đơn hàng</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        
+        <div id="add-product-content" class="tab-content active">
+            <div class="form-container">
+                <h1>Thêm sản phẩm điện thoại mới</h1>
+                
+                <form id="product-form" action="/add" method="POST">
+                    <div class="form-group"> <label for="base_name">Tên sản phẩm</label> <input type="text" id="base_name" name="base_name" class="form-control" required> </div>
+                    <div class="form-grid-2"> <div class="form-group"> <label for="color">Màu sắc</label> <input type="text" id="color" name="color" class="form-control"> </div> <div class="form-group"> <label for="storage">Dung lượng</label> <input type="text" id="storage" name="storage" class="form-control"> </div> </div>
+                    <div class="form-grid-2"> <div class="form-group"> <label for="price">Giá bán</label> <input type="number" id="price" name="price" class="form-control" required> </div> <div class="form-group"> <label for="stock_quantity">Số lượng</label> <input type="number" id="stock_quantity" name="stock_quantity" class="form-control" required> </div> </div>
+                    <div class="form-grid-2"> <div class="form-group"> <label for="category_name">Danh mục</label> <select id="category_name" name="category_name" class="form-control"> <option value="iPhone">iPhone</option> <option value="Mac">Mac</option> <option value="iPad">iPad</option> <option value="Watch">Watch</option> <option value="Tai nghe, Loa">Tai nghe, Loa</option> <option value="Phụ kiện">Phụ kiện</option> </select> </div> <div class="form-group"> <label for="brand_name">Thương hiệu</label> <select id="brand_name" name="brand_name" class="form-control"> <option value="Apple">Apple</option> <option value="Samsung">Samsung</option> </select> </div> </div>
+                    <div class="form-group"> <label for="description">Mô tả</label> <textarea id="description" name="description" class="form-control"></textarea> </div>
+                    <div class="form-group"> <label>Ảnh chính</label> <div> <label for="main_image_file_input" class="file-upload-btn">Chọn ảnh...</label> <input type="file" id="main_image_file_input" accept="image/*"> <span id="file-name">Chưa chọn tệp</span> </div> </div>
+                    <fieldset class="specs-fieldset"> <legend>Thông số kỹ thuật (JSON)</legend> <div class="form-grid-2"> <div class="form-group"> <label for="spec_screen">Màn hình</label> <input type="text" id="spec_screen" class="form-control"> </div> <div class="form-group"> <label for="spec_cpu">CPU</label> <input type="text" id="spec_cpu" class="form-control"> </div> <div class="form-group"> <label for="spec_ram">RAM</label> <input type="text" id="spec_ram" class="form-control"> </div> <div class="form-group"> <label for="spec_camera">Camera</label> <input type="text" id="spec_camera" class="form-control"> </div> <div class="form-group"> <label for="spec_pin">Pin</label> <input type="text" id="spec_pin" class="form-control"> </div> </div> </fieldset>
+                    <input type="hidden" id="main_image_url_hidden" name="main_image_url">
+                    <input type="hidden" id="specs_json_output" name="specs">
+                    <div class="form-group"> <button type="submit" class="btn-submit" id="submit-btn">Thêm sản phẩm</button> </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="manage-users-content" class="tab-content">
+            <div class="user-management-container">
+                <h2>Quản lý Người dùng</h2>
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên đầy đủ</th>
+                            <th>Số điện thoại</th>
+                            <th>Vai trò hiện tại</th>
+                            <th>Thay đổi vai trò</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in all_users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.full_name }}</td>
+                            <td>{{ user.phone_number }}</td>
+                            <td>{{ user.user_role }}</td>
+                            <td>
+                                {% if user.id == current_admin_id %}
+                                    <strong style="color: #555;">(Đây là bạn)</strong>
+                                {% else %}
+                                    <select class="role-selector" data-user-id="{{ user.id }}">
+                                        <option value="user" {% if user.user_role == 'user' %}selected{% endif %}>User</option>
+                                        <option value="admin" {% if user.user_role == 'admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="manage-orders-content" class="tab-content">
+            <div class="table-container"> <h2>Quản lý Đơn hàng</h2>
+                <table class="order-table" id="order-table">
+                    <thead>
+                        <tr>
+                            <th>Mã ĐH</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th>
+                            <th>Địa chỉ</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Cập nhật trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in all_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.full_name }}</td>
+                            <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}</td>
+                            <td>{{ order.shipping_address }}</td>
+                            <td>{{ "{:,.0f}₫".format(order.amount | float) }}</td>
+                            <td>
+                                <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+                            </td>
+                                <td>
+                                    <select class="status-select" data-order-id="{{ order.id }}">
+                                        <option value="preparing" {{ 'selected' if order.fulfillment_status == 'preparing' or order.fulfillment_status == 'pending' }}>Đang chuẩn bị</option>
+                                        <option value="delivering" {{ 'selected' if order.fulfillment_status == 'delivering' }}>Đang giao</option>
+                                        <option value="delivered" {{ 'selected' if order.fulfillment_status == 'delivered' }}>Giao thành công</option>
+                                        <option value="cancelled" {{ 'selected' if order.fulfillment_status == 'cancelled' }}>Đã hủy</D>
+                                    </select>
+                                </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div> </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const CLOUD_NAME = "dbvrvmsmo"; 
+            const UPLOAD_PRESET = "ecommerce"; 
+            
+            const imageFileInput = document.getElementById('main_image_file_input');
+            const fileNameDisplay = document.getElementById('file-name');
+            const productForm = document.getElementById('product-form');
+            const submitBtn = document.getElementById('submit-btn');
+
+            let uploadedImageUrl = null;
+
+            async function uploadImage(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', UPLOAD_PRESET);
+                
+                try {
+                    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.secure_url) {
+                        return data.secure_url;
+                    } else {
+                        throw new Error('Upload thất bại, không nhận được URL.');
+                    }
+                } catch (err) {
+                    console.error("Lỗi Cloudinary: ", err);
+                    return null;
+                }
+            }
+
+            if (imageFileInput) {
+                imageFileInput.addEventListener('change', function() {
+                    const file = this.files[0];
+                    if (file) {
+                        fileNameDisplay.textContent = file.name;
+                    } else {
+                        fileNameDisplay.textContent = 'Chưa chọn tệp';
+                    }
+                });
+            }
+
+            if (productForm) {
+                productForm.addEventListener('submit', async function(event) {
+                    event.preventDefault(); 
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Đang xử lý...";
+
+                    const file = imageFileInput.files[0];
+                    
+                    if (file) {
+                        console.log("Đang upload ảnh lên Cloudinary...");
+                        uploadedImageUrl = await uploadImage(file);
+                        
+                        if (!uploadedImageUrl) {
+                            console.error("Upload ảnh thất bại. Hủy submit.");
+                            console.error('Upload ảnh thất bại! Không thể thêm sản phẩm.');
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = "Thêm sản phẩm";
+                            return; 
+                        }
+                        console.log("Upload thành công: ", uploadedImageUrl);
+                        document.getElementById('main_image_url_hidden').value = uploadedImageUrl;
+
+                    } else {
+                        console.log("Không chọn ảnh, submit với URL rỗng.");
+                        document.getElementById('main_image_url_hidden').value = "";
+                    }
+
+                    const specs = {
+                        "Màn hình": document.getElementById('spec_screen').value || "N/A",
+                        "CPU": document.getElementById('spec_cpu').value || "N/A",
+                        "RAM": document.getElementById('spec_ram').value || "N/A",
+                        "Camera": document.getElementById('spec_camera').value || "N/A",
+                        "Pin": document.getElementById('spec_pin').value || "N/A"
+                    };
+                    document.getElementById('specs_json_output').value = JSON.stringify(specs);
+
+                    console.log("Đang submit form...");
+                    event.target.submit(); 
+                });
+            }
+            
+            const roleSelectors = document.querySelectorAll('.role-selector');
+            roleSelectors.forEach(selector => {
+                selector.addEventListener('change', async (event) => {
+                    const newRole = event.target.value;
+                    const userId = event.target.dataset.userId;
+
+                    console.log(`Đang thay đổi User ID ${userId} thành ${newRole}...`);
+                    
+                    try {
+                        const response = await fetch('/update-role', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, new_role: newRole })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            console.log('Cập nhật vai trò thành công!');
+                            window.location.reload(); 
+                        } else {
+                            console.error('Lỗi: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Lỗi kết nối. Không thể cập nhật vai trò.', error);
+                    }
+                });
+            });
+
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const contents = document.querySelectorAll('.tab-content');
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    if (link.dataset.tab) {
+                        event.preventDefault(); 
+                        const targetId = link.dataset.tab; 
+
+                        sidebarLinks.forEach(l => l.classList.remove('active'));
+                        contents.forEach(c => c.classList.remove('active'));
+
+                        link.classList.add('active');
+                        document.getElementById(targetId).classList.add('active');
+                    }
+                });
+            });
+            
+
+            const orderTable = document.getElementById('order-table');
+            if (orderTable) {
+                orderTable.addEventListener('change', async (event) => {
+                    if (event.target.classList.contains('status-select')) {
+                        const selectElement = event.target;
+                        const orderId = selectElement.dataset.orderId;
+                        const newStatus = selectElement.value;
+                        
+                        const statusBadge = selectElement.closest('tr').querySelector('.status-badge');
+                        
+                        try {
+                            const response = await fetch('/update-order-status', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    order_id: orderId,
+                                    new_status: newStatus
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                alert('Cập nhật thành công!');
+                                statusBadge.textContent = newStatus;
+                                statusBadge.className = `status-badge status-${newStatus}`;
+                            } else {
+                                alert('Lỗi: ' + data.message);
+                                selectElement.value = statusBadge.textContent; 
+                            }
+                        } catch (err) {
+                            alert('Lỗi kết nối server.');
+                            selectElement.value = statusBadge.textContent;
+                        }
+                    }
+                });
+            }
+            
+        }); 
+    </script>
+
+</body>
+</html>

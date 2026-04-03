@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So Sánh Sản Phẩm</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background-color: #f5f5f7; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+        header { background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 10px 0; position: sticky; top: 0; z-index: 1000; }
+        nav { display: flex; justify-content: space-between; align-items: center; height: 44px; }
+        .nav-left, .nav-center ul { display: flex; align-items: center; list-style: none; padding: 0; margin: 0; }
+        .nav-left .reseller-logo { font-size: 10px; color: #666; border-left: 1px solid #ccc; padding-left: 10px; }
+        .nav-center ul li { margin: 0 15px; }
+        .nav-center ul li a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+        .nav-right { display: flex; align-items: center; }
+        .nav-right .icon { font-size: 18px; margin-left: 20px; cursor: pointer; }
+        .user-info-container { display: flex; align-items: center; gap: 15px; position: relative; margin-left: 10px;}
+        .user-display { display: flex; align-items: center; padding: 5px 12px; border-radius: 20px; background-color: #f0f0f0; font-size: 14px; color: #333; cursor: pointer; position: relative; }
+        .user-display:hover { background-color: #e0e0e0; }
+        .user-display span { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .login-link-btn { text-decoration: none; color: #d0021b; font-size: 14px; font-weight: 500; padding: 5px 10px; border: 1px solid #d0021b; border-radius: 4px; }
+        .user-dropdown { display: none; position: absolute; top: 100%; right: 0; width: 180px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px; }
+        .user-dropdown a { display: block; padding: 10px; text-decoration: none; color: #333; font-size: 14px; }
+        .user-dropdown a:hover { background-color: #f0f0f0; }
+        
+
+        .compare-page-content { padding: 30px 0; }
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: 20px; color: #333; }
+
+
+        .compare-selectors {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .selector-box label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .selector-box select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+
+        #compare-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 300px;
+        }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .compare-table th,
+        .compare-table td {
+            padding: 15px;
+            border: 1px solid #eee;
+            text-align: center;
+            vertical-align: top;
+            width: 25%;
+        }
+
+        .compare-table th {
+            background-color: #f9f9f9;
+            font-weight: 600;
+            text-align: right;
+            width: 20%;
+        }
+        .compare-table img {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .compare-table h3 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            color: #007bff;
+            min-height: 44px;
+        }
+        .compare-table .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #d0021b;
+        }
+        .spec-value {
+            font-size: 15px;
+            color: #333;
+        }
+
+        .empty-column {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <span class="reseller-logo">Apple Premium<br>Reseller</span>
+                </div>
+                <div class="nav-center">
+                    <ul>
+                        <li><a href="/">Trang chủ</a></li>
+                        
+                        {% if user and user.user_role == 'admin' %}
+                        <li><a href="/dashboard">Admin</a></li>
+                        {% endif %}
+                        
+                        <li><a href="/compare">So Sánh</a></li>
+                    </ul>
+                </div>
+                <div class="nav-right">
+                    <div class="user-info-container">
+                        <span class="icon">🔍</span>
+                        {% if user %}
+                        <div class="user-display" id="user-menu-toggle">
+                            <span>{{ user.full_name }}</span>
+                            <div class="user-dropdown" id="user-dropdown-menu">
+                                <a href="/order-history">Lịch sử đơn hàng</a>
+                                <a href="/logout" style="color: #d0021b; font-weight: 600;">Đăng xuất</a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <a href="/login" class="login-link-btn">Đăng nhập</a>
+                        {% endif %}
+                        <a href="/cart" id="cart-icon-link">
+                            <span class="icon">🛒</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="compare-page-content">
+        <div class="container">
+            <h1>So Sánh Sản Phẩm</h1>
+
+            <div class="compare-selectors">
+                <div class="selector-box">
+                    <label for="select-product-1">Sản phẩm 1</label>
+                    <select class="compare-select" id="select-product-1" data-column-index="0">
+                        <option value="">-- Chọn sản phẩm --</option>
+                    </select>
+                </div>
+                <div class="selector-box">
+                    <label for="select-product-2">Sản phẩm 2</label>
+                    <select class="compare-select" id="select-product-2" data-column-index="1">
+                        <option value="">-- Chọn sản phẩm --</option>
+                    </select>
+                </div>
+                <div class="selector-box">
+                    <label for="select-product-3">Sản phẩm 3</label>
+                    <select class="compare-select" id="select-product-3" data-column-index="2">
+                        <option value="">-- Chọn sản phẩm --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="compare-table-container">
+                <div class="empty-column">(Vui lòng chọn sản phẩm từ các ô bên trên)</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+
+        const allProducts = {{ all_products_list | tojson | safe }};
+        
+
+        let compareProductsData = [null, null, null];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+
+            const selectors = document.querySelectorAll('.compare-select');
+            selectors.forEach(select => {
+                allProducts.forEach(product => {
+                    const option = new Option(
+                        `${product.base_name} ${product.storage || ''}`,
+                        product.id 
+                    );
+                    select.add(option);
+                });
+
+                select.addEventListener('change', handleProductSelect);
+            });
+
+            const userToggle = document.getElementById('user-menu-toggle');
+            const userMenu = document.getElementById('user-dropdown-menu');
+            if (userToggle && userMenu) {
+                userToggle.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
+                });
+                document.body.addEventListener('click', () => {
+                    if (userMenu.style.display === 'block') { userMenu.style.display = 'none'; }
+                });
+            }
+        });
+
+        async function handleProductSelect(event) {
+            const select = event.target;
+            const productId = select.value;
+            const columnIndex = parseInt(select.dataset.columnIndex, 10);
+
+            if (!productId) {
+
+                compareProductsData[columnIndex] = null;
+                renderCompareTable(); 
+                return;
+            }
+
+
+            const tableContainer = document.getElementById('compare-table-container');
+            tableContainer.innerHTML = `<div class="empty-column">Đang tải dữ liệu SP #${productId}...</div>`;
+
+            try {
+
+                const response = await fetch(`/get-product-spec/${productId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    compareProductsData[columnIndex] = data.product;
+                    renderCompareTable();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (err) {
+                tableContainer.innerHTML = `<div class="empty-column" style="color: red;">Lỗi: ${err.message}</div>`;
+                compareProductsData[columnIndex] = null; 
+            }
+        }
+
+
+        function renderCompareTable() {
+            const container = document.getElementById('compare-table-container');
+            
+
+            const activeProducts = compareProductsData.filter(p => p !== null);
+
+            if (activeProducts.length === 0) {
+                container.innerHTML = `<div class="empty-column">(Vui lòng chọn sản phẩm từ các ô bên trên)</div>`;
+                return;
+            }
+
+
+            let allSpecKeys = new Set(); 
+            activeProducts.forEach(p => {
+                if(p.specs) {
+                    Object.keys(p.specs).forEach(key => allSpecKeys.add(key));
+                }
+            });
+            
+            const specKeys = Array.from(allSpecKeys); 
+
+
+            let tableHTML = '<table class="compare-table">';
+            
+
+            tableHTML += '<thead><tr><th></th>';
+            compareProductsData.forEach(p => {
+                if (p) {
+                    tableHTML += `<td><img src="${p.main_image_url || 'https://via.placeholder.com/150'}" alt="${p.base_name}"></td>`;
+                } else {
+                    tableHTML += '<td><div class="empty-column">...</div></td>';
+                }
+            });
+            tableHTML += '</tr>';
+
+
+            tableHTML += '<tr><th>Sản phẩm</th>';
+            compareProductsData.forEach(p => {
+                if (p) {
+                    tableHTML += `<td><h3>${p.base_name} ${p.storage || ''}</h3></td>`;
+                } else {
+                    tableHTML += '<td><div class="empty-column">...</div></td>';
+                }
+            });
+            tableHTML += '</tr>';
+            
+
+            tableHTML += '<tr><th>Giá</th>';
+            compareProductsData.forEach(p => {
+                if (p) {
+                    const price = parseFloat(p.price).toLocaleString('vi-VN');
+                    tableHTML += `<td><span class="price">${price}₫</span></td>`;
+                } else {
+                    tableHTML += '<td><div class="empty-column">...</div></td>';
+                }
+            });
+            tableHTML += '</tr></thead>';
+            
+  
+            tableHTML += '<tbody>';
+            specKeys.forEach(key => {
+                tableHTML += `<tr><th>${key}</th>`; 
+                
+   
+                compareProductsData.forEach(p => {
+                    if (p) {
+                        const value = (p.specs && p.specs[key]) ? p.specs[key] : 'N/A';
+                        tableHTML += `<td><span class="spec-value">${value}</span></td>`;
+                    } else {
+                         tableHTML += '<td><div class="empty-column">-</div></td>';
+                    }
+                });
+                
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+
+            container.innerHTML = tableHTML;
+        }
+
+    </script>
+
+</body>
+</html>

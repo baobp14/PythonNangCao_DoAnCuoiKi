@@ -1,0 +1,1 @@
+LƯU Ý: do phải đồng bộ sql và payos nên phải chỉnh id của hoá đơn lớn lớn mới sử dụng được. Do phải đồng bộ id trong database và id thanh toán trong payos
